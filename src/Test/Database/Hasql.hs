@@ -11,6 +11,7 @@ module Test.Database.Hasql
   ( -- * Running tests
     -- $running-tests
     startupPostgres
+  , startupPostgresInit
   , teardownPostgres 
   , allocateConnection
   , freeConnection
@@ -106,23 +107,35 @@ data InitException
 
 instance Exception InitException
 
--- | Start and initialize temporary database.
+-- | Start and initialize temporary database using init script.
 --
 -- Accepts database initialization script that can contain multiple commands
 -- and is run in the separate transaction.
 --
 -- @throws: In case if the database initialization fails throws 'InitException'.
 startupPostgres :: ByteString -> IO Temp.DB
-startupPostgres init_script = do
+startupPostgres init_script = startupPostgresInit script where
+  script c = do
+    HS.run (HS.sql init_script ) c >>= \case
+      Right {} -> pure ()
+      Left e -> throwIO $ InitException e
+
+-- | Start and initialize temporary database.
+--
+-- Accepts database initialization funciton from the user.
+--
+-- @throws: In case if the database initialization fails throws 'InitException' in
+-- addition to any exception that could be thrown by the user function.
+startupPostgresInit :: (HC.Connection -> IO ()) -> IO Temp.DB
+startupPostgresInit run_init = do
   Temp.start >>= \case
     Left e -> throwIO $ PostgresStartException e
     Right db -> do
       c <- HC.acquire (Temp.toConnectionString db) >>= \case
              Left e -> throwIO $ ConnectException e
              Right c -> pure c
-      HS.run (HS.sql init_script ) c >>= \case
-        Right {} -> pure db
-        Left e -> throwIO $ InitException e
+      run_init c
+      pure db
 
 -- | Teardown database and associated resources
 teardownPostgres :: Temp.DB -> IO ()
