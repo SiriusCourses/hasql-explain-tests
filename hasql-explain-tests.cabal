@@ -13,17 +13,16 @@ copyright:          (C) Talant i uspeh, 2022
 category:           Testing
 extra-source-files: CHANGELOG.md
 
-description:        The library that provides an interface to test queries
+description:        The library provides an interface to test queries
                     in the projects that are using hasql library. Hasql library
-                    is very lowlevel and allows to use all the features of postgres
-                    at the cost of losing type safety. This package intended to
-                    fill the gap and simplify testing the project.
+                    is very low-level and allows you to use all the features of Postgres
+                    at the cost of losing type safety. This package is intended to
+                    fill the gap and simplify testing the project by providing helper functions
+                    for basic queries tests that do not depend on the concrete application logic.
 
 
 library
     exposed-modules:  Test.Database.Hasql
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
     default-extensions:
       ImportQualifiedPost
       LambdaCase

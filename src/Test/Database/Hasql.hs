@@ -1,10 +1,10 @@
 -- |
--- An interface for testing hasql queries. As @hasql@ is pretty low level
+-- An interface for testing @hasql@ queries. As @hasql@ is a pretty low-level
 -- library and does not provide additional checks in compile time we are 
--- intered if the queries are well formed from the database point of view.
+-- interested if the queries are well-formed from the database point of view.
 -- 
 -- This library provides a number of tests that helps to check that the
--- basic properties are held. In order to run the tests the library provides
+-- basic properties are held. In order to run the tests, the library provides
 -- helpers for running the temporary database.
 --
 module Test.Database.Hasql
@@ -43,12 +43,12 @@ import Test.Hspec
 --
 -- If this test passes it guarantees:
 --
---   1. that the query is well formed and that encoders works.
+--   1. that the query is well-formed and that encoders works.
 --
 -- However it does not check:
 --
 --   1. If encoder works
---   2. Complexity of the query
+--   2. The complexity of the query
 --   3. Locks that the query holds
 
 -- | Runs explain test.
@@ -76,9 +76,9 @@ explain t c = do
 -- $running-tests
 --
 -- The library if the test-framework agnostic so it provides only the basic
--- commands that can be used in order to run the tests using diferrent frameworks.
+-- commands that can be used in order to run the tests using differrent frameworks.
 --
--- For example using tasty + tasty-hunit one can do:
+-- For example, using tasty + tasty-hunit one can do:
 -- 
 -- @
 -- import Test.Tasty
@@ -102,17 +102,17 @@ data InitException
   | ConnectException HC.ConnectionError
     -- ^ Can't allocate connection to the local db
   | PostgresStartException Temp.StartError
-    -- ^ We have failed to start temporary postgres.
+    -- ^ We have failed to start the temporary postgres.
   deriving (Show, Typeable)
 
 instance Exception InitException
 
--- | Start and initialize temporary database using init script.
+-- | Start and initialize the temporary database using the init script.
 --
 -- Accepts database initialization script that can contain multiple commands
--- and is run in the separate transaction.
+-- and is run in a separate transaction.
 --
--- @throws: In case if the database initialization fails throws 'InitException'.
+-- @throws: In case the database initialization fails throws 'InitException'.
 startupPostgres :: ByteString -> IO Temp.DB
 startupPostgres init_script = startupPostgresInit script where
   script c = do
