@@ -1,6 +1,9 @@
+{-# LANGUAGE ExistentialQuantification  #-}
 module Test.Database.Hasql.Spec
   ( explainTestsSpec
   , buildExplainTestsSpec
+  , SomeQuery(..)
+  , (=>>)
   ) where
 
 import Control.Exception
@@ -21,17 +24,22 @@ import Test.Database.Hasql
 import Test.QuickCheck
 import Test.Hspec
 
+-- | Existential wrapper for the query
+data SomeQuery = forall a b . Arbitrary a =>
+  SomeQuery (HST.Statement a b)
+
+(=>>) :: Arbitrary a => b -> HST.Statement a c -> (b, SomeQuery)
+(=>>) a b = (a, SomeQuery b)
 
 type ModuleName = String
 type QueryName  = String
 
 -- | Build spec to run explain tests for queries
 explainTestsSpec
-  :: Arbitrary input
-  => IO () -- ^ Action to run before explain tests.
+  :: IO () -- ^ Action to run before explain tests.
   -> IO () -- ^ Action to run after  explain tests.
   -> (ActionWith HC.Connection -> IO ()) -- ^ Action to run around explain tests using db connection.
-  -> [(ModuleName, [(QueryName, HST.Statement input output)])] -- ^ Queries to test
+  -> [(ModuleName, [(QueryName, SomeQuery)])] -- ^ Queries to test
   -> Spec
 explainTestsSpec run_before_all run_after_all run_around queries =
   beforeAll_ run_before_all
@@ -42,13 +50,12 @@ explainTestsSpec run_before_all run_after_all run_around queries =
        $ \(module_name, module_queries) ->
           context module_name
             $ for_ module_queries
-            $ \(query_name, query) -> it query_name $ explain query
+            $ \(query_name, SomeQuery query) -> it query_name $ explain query
 
 -- | Build spec to run explain tests for queries.
 -- Initialize temprorary database, using it for tests and teardown it after tests
 buildExplainTestsSpec
-  :: Arbitrary input
-  => [(ModuleName, [(QueryName, HST.Statement input output)])] -- ^ Queries to test
+  :: [(ModuleName, [(QueryName, SomeQuery)])] -- ^ Queries to test
   -> (Pool HC.Connection -> IO ()) -- ^ Action to run database migrations
   -> Spec
 buildExplainTestsSpec queries run_db_migrations =
