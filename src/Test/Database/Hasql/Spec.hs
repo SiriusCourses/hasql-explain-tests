@@ -59,7 +59,7 @@ buildExplainTestsSpec queries run_db_migrations =
     queries
   where
     initializeDb conn = do
-      pool <- newPool $ setNumStripes (Just 1) $ defaultPoolConfig (pure conn) (HC.release) 10 10
+      pool <- createPool (pure conn) (HC.release) 1 10 10
       run_db_migrations pool
     setupConnection :: ActionWith HC.Connection -> IO ()
     setupConnection = bracket prepareConnection freeConnection where
