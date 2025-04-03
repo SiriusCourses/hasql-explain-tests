@@ -50,7 +50,7 @@ explainTestsSpec run_before_all run_after_all run_around queries =
        $ \(module_name, module_queries) ->
           context module_name
             $ for_ module_queries
-            $ \(query_name, SomeQuery query) -> it query_name $ explain query
+            $ \(query_name, SomeQuery query) -> it query_name $ explainWithRetry query
 
 -- | Build spec to run explain tests for queries.
 -- Initialize temprorary database, using it for tests and teardown it after tests

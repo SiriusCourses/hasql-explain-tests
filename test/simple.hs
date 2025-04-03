@@ -20,6 +20,7 @@ main = defaultMain $
 tests :: IO HC.Connection -> TestTree
 tests mkConn = testGroup "explain-tests"
   [ testCase "select 1" $ mkConn >>= explain select1
+  , testCase "select 1" $ mkConn >>= explainWithRetry select1
   ]
 
 select1 :: HST.Statement () Int64

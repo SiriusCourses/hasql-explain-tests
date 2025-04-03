@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 -- |
 -- An interface for testing @hasql@ queries. As @hasql@ is a pretty low-level
 -- library and does not provide additional checks in compile time we are 
@@ -19,6 +20,7 @@ module Test.Database.Hasql
     -- * Explain tests
     -- $explain-tests
   , explain
+  , explainWithRetry
   ) where
 
 import Control.Exception
@@ -72,6 +74,31 @@ explain t c = do
              HST.Statement sql enc _dec _ -> HST.Statement ("EXPLAIN " <> sql) enc HD.noResult False
   input <- liftIO $ generate $ resize 2 $ arbitrary
   HS.run (HS.statement input t') c `shouldReturn` Right ()
+
+-- same as explain function, but with retrying on UnicodeNullCommandError
+explainWithRetry
+  :: (Arbitrary input)
+  => HST.Statement input output -- ^ Original statement
+  -> HC.Connection -- ^ Connection to the database
+  -> Expectation 
+explainWithRetry any_statement c = do
+  let explain_statement = case any_statement of
+             HST.Statement sql enc _dec _ -> HST.Statement ("EXPLAIN " <> sql) enc HD.noResult False
+  runExplain explain_statement 0
+  where
+    runExplain explain_statement' counter = do
+      input <- liftIO $ generate $ resize 2 arbitrary
+      result <- HS.run (HS.statement input explain_statement') c
+      if counter > 5
+      then pure result `shouldReturn` Right ()
+      else case result of
+        Left (HS.QueryError _ _ UnicodeNullCommandError) -> runExplain explain_statement' (counter+1)
+        _ -> pure result `shouldReturn` Right ()
+
+-- | Unicode \\Null symbol error
+pattern UnicodeNullCommandError :: HS.CommandError
+pattern UnicodeNullCommandError =
+  HS.ResultError (HS.ServerError "22P05" "unsupported Unicode escape sequence" (Just "\\u0000 cannot be converted to text.") Nothing Nothing)
 
 -- $running-tests
 --

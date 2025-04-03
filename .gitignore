@@ -1,0 +1,7 @@
+dist-newstyle/
+tmp/
+/upload/
+.vscode
+.DS_Store
+result/
+tmp/*
