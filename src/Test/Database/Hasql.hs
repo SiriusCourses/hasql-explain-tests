@@ -154,15 +154,21 @@ startupPostgres init_script = startupPostgresInit script where
 -- @throws: In case if the database initialization fails throws 'InitException' in
 -- addition to any exception that could be thrown by the user function.
 startupPostgresInit :: (HC.Connection -> IO ()) -> IO Temp.DB
-startupPostgresInit run_init = do
-  Temp.start >>= \case
-    Left e -> throwIO $ PostgresStartException e
-    Right db -> do
-      c <- HC.acquire (Temp.toConnectionString db) >>= \case
-             Left e -> throwIO $ ConnectException e
-             Right c -> pure c
-      run_init c
+startupPostgresInit run_init =
+  bracketOnError start Temp.stop initialize
+  where
+    start =
+      Temp.start >>= \case
+        Left e -> throwIO $ PostgresStartException e
+        Right db -> pure db
+    initialize db = do
+      bracket acquire HC.release run_init
       pure db
+      where
+        acquire =
+          HC.acquire (Temp.toConnectionString db) >>= \case
+            Left e -> throwIO $ ConnectException e
+            Right c -> pure c
 
 -- | Teardown database and associated resources
 teardownPostgres :: Temp.DB -> IO ()
